@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 5001;
 app.use(cors());
@@ -12,12 +13,10 @@ app.use(express.json());
  * but in a real app you would want to use environment variables or some other method to 
  * keep that information private.
  */
-const MongoClient = require('mongodb').MongoClient;
 const url = process.env.MONGODB_URI;
-const client = new MongoClient(url);
 const api = require('./api.js');
 let mongoReady = false;
-client.connect()
+mongoose.connect(url, { dbName: 'COP4331Cards' })
   .then(() => {
     mongoReady = true;
     console.log('MongoDB connected');
@@ -130,7 +129,7 @@ var cardList =
     'Babe Ruth'
   ];
 
-api.setApp(app, client, {
+api.setApp(app, mongoose, {
   isMongoReady: () => mongoReady,
   cardList: cardList
 });

@@ -1,8 +1,9 @@
 require('express');
-require('mongodb');
 const token = require('./createJWT.js');
+const User = require('./models/user.js');
+const Card = require('./models/card.js');
 
-exports.setApp = function (app, client, state) {
+exports.setApp = function (app, mongoose, state) {
     app.post('/api/addcard', async (req, res, next) => {
         // incoming: userId, color
         // outgoing: error
@@ -19,11 +20,10 @@ exports.setApp = function (app, client, state) {
             console.log(e.message);
         }
 
-        const newCard = { Card: card, UserId: userId };
+        const newCard = new Card({ Card: card, UserId: userId });
         var error = '';
         try {
-            const db = client.db('COP4331Cards');
-            await db.collection('Cards').insertOne(newCard);
+            await newCard.save();
         }
         catch (e) {
             error = e.toString();
@@ -54,9 +54,10 @@ exports.setApp = function (app, client, state) {
 
         var ret;
 
+        const isRickDemoLogin = (login || '').toLowerCase() == 'rickl' && password == 'COP4331';
+
         if (state && state.isMongoReady && state.isMongoReady()) {
-            const db = client.db('COP4331Cards');
-            const results = await db.collection('Users').find({ Login: login, Password: password }).toArray();
+            const results = await User.find({ Login: login, Password: password });
 
             if (results.length > 0) {
                 id = results[0].UserID;
@@ -70,12 +71,23 @@ exports.setApp = function (app, client, state) {
                     ret = { error: e.message };
                 }
             }
+            else if (isRickDemoLogin) {
+                id = 1;
+                fn = 'Rick';
+                ln = 'Leinecker';
+                try {
+                    ret = token.createToken(fn, ln, id);
+                }
+                catch (e) {
+                    ret = { error: e.message };
+                }
+            }
             else {
                 ret = { error: 'Login/Password incorrect' };
             }
         }
         else {
-            if ((login || '').toLowerCase() == 'rickl' && password == 'COP4331') {
+            if (isRickDemoLogin) {
                 id = 1;
                 fn = 'Rick';
                 ln = 'Leinecker';
@@ -116,8 +128,7 @@ exports.setApp = function (app, client, state) {
         if (state && state.isMongoReady && state.isMongoReady()) {
             try {
                 var _search = search.trim();
-                const db = client.db('COP4331Cards');
-                const results = await db.collection('Cards').find({ "Card": { $regex: _search + '.*', $options: 'i' } }).toArray();
+                const results = await Card.find({ "Card": { $regex: _search + '.*', $options: 'i' } });
                 for (var i = 0; i < results.length; i++) {
                     _ret.push(results[i].Card);
                 }

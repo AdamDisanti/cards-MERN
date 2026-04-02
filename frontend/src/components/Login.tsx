@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { buildPath } from './Path';
 import { storeToken } from '../tokenStorage';
 import { jwtDecode } from 'jwt-decode';
@@ -18,17 +19,10 @@ function Login() {
 
   async function doLogin(event: any): Promise<void> {
     event.preventDefault();
-    var obj = { login: loginName, password: loginPassword };
-    var js = JSON.stringify(obj);
+    const obj = { login: loginName, password: loginPassword };
     try {
-      const response = await fetch(buildPath('api/login'),
-        {
-          method: 'POST', body: js, headers: {
-            'Content-Type':
-              'application/json'
-          }
-        });
-      var res = JSON.parse(await response.text());
+      const response = await axios.post(buildPath('api/login'), obj);
+      const res = response.data;
 
       if (res.error) {
         setMessage('User/Password combination incorrect');

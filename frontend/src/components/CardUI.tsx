@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { buildPath } from './Path';
 import { retrieveToken, storeToken } from '../tokenStorage';
 
@@ -24,19 +25,10 @@ function CardUI() {
         e.preventDefault();
 
         let obj = { userId: userId, card: card, jwtToken: retrieveToken() };
-        let js = JSON.stringify(obj);
 
         try {
-            const response = await fetch(buildPath('api/addcard'),
-                {
-                    method: 'POST', body: js, headers: {
-                        'Content-Type':
-                            'application/json'
-                    }
-                });
-
-            let txt = await response.text();
-            let res = JSON.parse(txt);
+            const response = await axios.post(buildPath('api/addcard'), obj);
+            let res = response.data;
 
             if (res.error.length > 0) {
                 setMessage('API Error:' + res.error);
@@ -55,19 +47,10 @@ function CardUI() {
         e.preventDefault();
 
         let obj = { userId: userId, search: search, jwtToken: retrieveToken() };
-        let js = JSON.stringify(obj);
 
         try {
-            const response = await fetch(buildPath('api/searchcards'),
-                {
-                    method: 'POST', body: js, headers: {
-                        'Content-Type':
-                            'application/json'
-                    }
-                });
-
-            let txt = await response.text();
-            let res = JSON.parse(txt);
+            const response = await axios.post(buildPath('api/searchcards'), obj);
+            let res = response.data;
             let _results = res.results;
             let resultText = '';
             for (let i = 0; i < _results.length; i++) {
