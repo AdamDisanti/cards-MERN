@@ -5,7 +5,7 @@ start backend
 in the frontend directory terminal
     npm run dev
 
-open -> http://localhost:5173
+open -> http://localhost:5173 or whatever localhost link you use.
 
 -Doing it this way instead of docker ensures we still connect to the remote database linked in .env file. 
 
