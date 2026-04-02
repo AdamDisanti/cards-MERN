@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { buildPath } from '../utils/api';
+import { buildPath } from './Path';
+import { storeToken } from '../tokenStorage';
+import { jwtDecode } from 'jwt-decode';
 
 function Login() {
   const [message, setMessage] = useState('');
@@ -27,15 +29,36 @@ function Login() {
           }
         });
       var res = JSON.parse(await response.text());
-      if (res.id <= 0) {
+
+      if (res.error) {
         setMessage('User/Password combination incorrect');
+        return;
       }
-      else {
-        var user =
-          { firstName: res.firstName, lastName: res.lastName, id: res.id }
-        localStorage.setItem('user_data', JSON.stringify(user));
-        setMessage('');
-        window.location.href = '/cards';
+
+      const { accessToken } = res;
+      storeToken(res);
+
+      const decoded: any = jwtDecode(accessToken);
+
+      try {
+        var userId = decoded.userId;
+        var firstName = decoded.firstName;
+        var lastName = decoded.lastName;
+
+        if (userId <= 0) {
+          setMessage('User/Password combination incorrect');
+        }
+        else {
+          var user = { firstName: firstName, lastName: lastName, id: userId }
+          localStorage.setItem('user_data', JSON.stringify(user));
+
+          setMessage('');
+          window.location.href = '/cards';
+        }
+      }
+      catch (e) {
+        console.log(e);
+        return;
       }
     }
     catch (error: any) {

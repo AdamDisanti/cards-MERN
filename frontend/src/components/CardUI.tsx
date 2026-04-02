@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { buildPath } from '../utils/api';
+import { buildPath } from './Path';
+import { retrieveToken, storeToken } from '../tokenStorage';
 
 function CardUI() {
     let _ud: any = localStorage.getItem('user_data');
@@ -22,7 +23,7 @@ function CardUI() {
     async function addCard(e: any): Promise<void> {
         e.preventDefault();
 
-        let obj = { userId: userId, card: card };
+        let obj = { userId: userId, card: card, jwtToken: retrieveToken() };
         let js = JSON.stringify(obj);
 
         try {
@@ -42,6 +43,7 @@ function CardUI() {
             }
             else {
                 setMessage('Card has been added');
+                storeToken(res.jwtToken);
             }
         }
         catch (error: any) {
@@ -52,7 +54,7 @@ function CardUI() {
     async function searchCard(e: any): Promise<void> {
         e.preventDefault();
 
-        let obj = { userId: userId, search: search };
+        let obj = { userId: userId, search: search, jwtToken: retrieveToken() };
         let js = JSON.stringify(obj);
 
         try {
@@ -75,6 +77,7 @@ function CardUI() {
                 }
             }
             setResults('Card(s) have been retrieved');
+            storeToken(res.jwtToken);
             setCardList(resultText);
         }
         catch (error: any) {

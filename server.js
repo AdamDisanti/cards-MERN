@@ -15,6 +15,7 @@ app.use(express.json());
 const MongoClient = require('mongodb').MongoClient;
 const url = process.env.MONGODB_URI;
 const client = new MongoClient(url);
+const api = require('./api.js');
 let mongoReady = false;
 client.connect()
   .then(() => {
@@ -129,6 +130,11 @@ var cardList =
     'Babe Ruth'
   ];
 
+api.setApp(app, client, {
+  isMongoReady: () => mongoReady,
+  cardList: cardList
+});
+
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
@@ -144,100 +150,3 @@ app.use((req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 }); // start Node + Express server
-
-app.post('/api/login', async (req, res, next) => {
-  // incoming: login, password
-  // outgoing: id, firstName, lastName, error
-  var error = '';
-  const { login, password } = req.body;
-  var id = -1;
-  var fn = '';
-  var ln = '';
-
-  if (mongoReady) {
-    try {
-      const db = client.db('COP4331Cards');
-      const results = await
-        db.collection('Users').find({ Login: login, Password: password }).toArray();
-      if (results.length > 0) {
-        id = results[0].UserID;
-        fn = results[0].FirstName;
-        ln = results[0].LastName;
-      }
-      else {
-        error = 'Invalid user name/password';
-      }
-    }
-    catch (e) {
-      error = e.toString();
-    }
-  }
-  else {
-    if ((login || '').toLowerCase() == 'rickl' && password == 'COP4331') {
-      id = 1;
-      fn = 'Rick';
-      ln = 'Leinecker';
-    }
-    else {
-      error = 'Invalid user name/password';
-    }
-  }
-
-  var ret = { id: id, firstName: fn, lastName: ln, error: error };
-  res.status(200).json(ret);
-});
-
-app.post('/api/searchcards', async (req, res, next) => {
-  // incoming: userId, search
-  // outgoing: results[], error
-  var error = '';
-  const { userId, search } = req.body;
-  var _ret = [];
-
-  if (mongoReady) {
-    try {
-      var _search = (search || '').trim();
-      const db = client.db('COP4331Cards');
-      const results = await db.collection('Cards').find({ "Card": { $regex: _search + '.*', $options: 'i' } }).toArray();
-      for (var i = 0; i < results.length; i++) {
-        _ret.push(results[i].Card);
-      }
-    }
-    catch (e) {
-      error = e.toString();
-    }
-  }
-  else {
-    var localSearch = String(search || '').toLowerCase().trim();
-    for (var j = 0; j < cardList.length; j++) {
-      var lowerFromList = cardList[j].toLowerCase();
-      if (lowerFromList.indexOf(localSearch) >= 0) {
-        _ret.push(cardList[j]);
-      }
-    }
-  }
-
-  var ret = { results: _ret, error: error };
-  res.status(200).json(ret);
-});
-
-app.post('/api/addcard', async (req, res, next) => {
-  // incoming: userId, color
-  // outgoing: error
-  const { userId, card } = req.body;
-  const newCard = { Card: card, UserId: userId };
-  var error = '';
-  if (mongoReady) {
-    try {
-      const db = client.db('COP4331Cards');
-      await db.collection('Cards').insertOne(newCard);
-    }
-    catch (e) {
-      error = e.toString();
-    }
-  }
-
-  cardList.push(card);
-  var ret = { error: error };
-  res.status(200).json(ret);
-});
